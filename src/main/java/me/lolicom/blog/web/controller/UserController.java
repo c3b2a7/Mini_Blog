@@ -42,10 +42,7 @@ public class UserController {
         //update info
         User user = (User) subject.getPrincipal();
         userService.updateForLogin(user);
-        String jwt = jwtUtils.createToken(username, (map) -> {
-            map.put("admin", false);
-            return map;
-        });
+        String jwt = JwtUtils.createToken(username, (map) -> map.put("admin", false));
         return AjaxResponse.ok(jwt);
     }
     

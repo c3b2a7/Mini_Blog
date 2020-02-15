@@ -16,6 +16,7 @@ import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSource
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,13 +32,14 @@ import java.util.Map;
  * @author lolicom
  */
 @Configuration
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties(SecurityProperties.class)
+@ConditionalOnProperty(name = "me.lolicom.blog.security.enable", matchIfMissing = true)
 public class ShiroConfig {
-    
+
     @Bean
-    public SecurityManager defaultWebSecurityManager(Collection<Realm> realms) {
+    public SecurityManager securityManager(Collection<Realm> realms) {
         DefaultWebSecurityManager securityManager = new DefaultWebSecurityManager(realms);
-        
+
         /*
          * 关闭shiro自带的session，详情见文档
          * http://shiro.apache.org/session-management.html#SessionManagement-StatelessApplications%28Sessionless%29
