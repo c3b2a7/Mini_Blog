@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<aspectj>
+
+    <weaver options="-showWeaveInfo -Xlint:ignore -Xset:weaveJavaxPackages=true"/>
+
+    <aspects>
+        <aspect name="me.lolico.blog.lang.aspect.CheckParamAspect"/>
+    </aspects>
+
+</aspectj>
