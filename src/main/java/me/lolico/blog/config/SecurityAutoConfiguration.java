@@ -94,7 +94,7 @@ public class SecurityAutoConfiguration extends WebSecurityConfigurerAdapter {
                 .cors()
                 .and()
                 .authorizeRequests()
-                .antMatchers("/pub/**", "/test/**").permitAll()
+                .antMatchers("/public/**").permitAll()
                 .anyRequest().authenticated() //任何请求都需要认证
                 .and()
                 .apply(new BearerAuthzConfigurer<>(headerName, prefix)) // 应用token认证配置器
@@ -134,9 +134,9 @@ public class SecurityAutoConfiguration extends WebSecurityConfigurerAdapter {
         public Collection<? extends GrantedAuthority> getAuthorities() {
             if (user.getIsAdmin().equals(Boolean.TRUE)) {
                 return Arrays.asList(new SimpleGrantedAuthority("ADMIN"),
-                        new SimpleGrantedAuthority("USER"));
+                        new SimpleGrantedAuthority(user.getRole().getName()));
             }
-            return Collections.singletonList(new SimpleGrantedAuthority("USER"));
+            return Collections.singletonList(new SimpleGrantedAuthority(user.getRole().getName()));
         }
 
         @Override

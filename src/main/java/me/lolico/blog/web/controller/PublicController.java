@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author lolico
  */
-@RequestMapping("pub")
+@RequestMapping("public")
 @RestController
 public class PublicController {
     private final UserService userService;

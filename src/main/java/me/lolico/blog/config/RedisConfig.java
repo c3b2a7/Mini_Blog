@@ -28,14 +28,10 @@ public class RedisConfig {
 
     @Bean
     public KeyGenerator keyGenerator() {
-        return (target, method, params) -> target.getClass().getName() +
-                "." +
-                method.getName() +
-                "(" +
-                Stream.of(params)
-                        .map(String::valueOf)
-                        .collect(Collectors.joining(",")) +
-                ")";
+        return (target, method, params) -> String.format("%s#%s(%s)",
+                target.getClass().getName(),
+                method.getName(),
+                Stream.of(params).map(String::valueOf).collect(Collectors.joining(",")));
     }
 
     /**
