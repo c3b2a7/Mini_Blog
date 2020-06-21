@@ -1,9 +1,16 @@
 package me.lolico.blog.web.controller;
 
-import me.lolico.blog.lang.annotation.WebLog;
+import me.lolico.blog.lang.annotation.CheckParam;
+import me.lolico.blog.lang.annotation.DistributedLock;
+import me.lolico.blog.web.LogReporter;
+import me.lolico.blog.web.vo.ApiResult;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Lolico li
@@ -12,9 +19,28 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/test")
 public class TestController {
 
-    @GetMapping
-    @WebLog(name = "test")
-    public String get(String msg) {
+    private final ApplicationEventPublisher eventPublisher;
+
+    public TestController(ApplicationEventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
+    }
+
+    @GetMapping("/getMsg")
+    @DistributedLock(key = "#msg", timeout = 10)
+    public String getMsg(String msg) throws InterruptedException {
+        Thread.sleep(8000);
         return msg;
+    }
+
+
+    @GetMapping("/get")
+    @CheckParam(index = 0)
+    @DistributedLock(key = "#msg", timeout = 10)
+    public ApiResult get(String msg) {
+        eventPublisher.publishEvent(LogReporter.logEvent(this));
+        Map<String, Object> map = new HashMap<>();
+        map.put("answer", true);
+        map.put("msg", msg);
+        return ApiResult.ok(map);
     }
 }

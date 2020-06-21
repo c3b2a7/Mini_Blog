@@ -2,7 +2,6 @@ package me.lolico.blog.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.AdviceMode;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ApplicationEventMulticaster;
@@ -15,7 +14,7 @@ import org.springframework.util.ErrorHandler;
  * @author Lolico li
  */
 @Configuration
-@EnableAsync(mode = AdviceMode.ASPECTJ)
+@EnableAsync
 public class AsyncConfig {
 
     @Bean(AbstractApplicationContext.APPLICATION_EVENT_MULTICASTER_BEAN_NAME)

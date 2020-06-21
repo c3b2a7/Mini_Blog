@@ -1,5 +1,6 @@
 package me.lolico.blog.lang.aspect;
 
+import com.google.common.collect.ImmutableList;
 import me.lolico.blog.lang.SpelAnnotationResolver;
 import me.lolico.blog.lang.annotation.DistributedLock;
 import me.lolico.blog.web.vo.ApiResult;
@@ -12,17 +13,13 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.data.redis.connection.RedisStringCommands;
-import org.springframework.data.redis.connection.ReturnType;
-import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.types.Expiration;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -51,15 +48,11 @@ public final class DistributedLockAspect {
         String value = getLock(key, lock.timeout(), lock.timeUnit());
         if (!StringUtils.hasLength(value)) {
             // 获取锁失败
-            return ApiResult.status(HttpStatus.LOCKED, "请勿频繁操作");
-            // return ResponseEntity.status(HttpStatus.LOCKED); //HttpStatus.NO_CONTENT ErrorCode
+            return ApiResult.status(HttpStatus.LOCKED, "接口被锁定");
         }
         // 获取锁成功
         try {
             return pjp.proceed();
-            // } catch (Throwable throwable) {
-            //     return ApiResult.status(HttpStatus.INTERNAL_SERVER_ERROR, "服务器出错");
-            // return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR);
         } finally {
             // 释放锁
             releaseLock(key, value);
@@ -82,11 +75,7 @@ public final class DistributedLockAspect {
     private String getLock(String key, long timeout, TimeUnit timeUnit) {
         try {
             String value = UUID.randomUUID().toString();
-            Boolean lockStat = redisTemplate.execute((RedisCallback<Boolean>) connection -> {
-                Object nativeConnection = connection.getNativeConnection();
-                return connection.set(key.getBytes(StandardCharsets.UTF_8), value.getBytes(StandardCharsets.UTF_8),
-                        Expiration.from(timeout, timeUnit), RedisStringCommands.SetOption.SET_IF_ABSENT);
-            });
+            Boolean lockStat = redisTemplate.opsForValue().setIfAbsent(key, value, timeout, timeUnit);
             if (lockStat == null || !lockStat) {
                 // 获取锁失败
                 return null;
@@ -101,9 +90,8 @@ public final class DistributedLockAspect {
     private void releaseLock(String key, String value) {
         try {
             String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
-            Boolean unLockStat = redisTemplate.execute((RedisCallback<Boolean>) connection ->
-                    connection.eval(script.getBytes(), ReturnType.BOOLEAN, 1,
-                            key.getBytes(StandardCharsets.UTF_8), value.getBytes(StandardCharsets.UTF_8)));
+            DefaultRedisScript<Boolean> redisScript = new DefaultRedisScript<>(script, Boolean.class);
+            Boolean unLockStat = redisTemplate.execute(redisScript, ImmutableList.of(key), value);
             if (unLockStat == null || !unLockStat) {
                 logger.error("释放分布式锁失败，key={}，已自动超时，其他线程可能已经重新获取锁", key);
             }

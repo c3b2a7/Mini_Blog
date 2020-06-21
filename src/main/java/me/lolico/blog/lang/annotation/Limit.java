@@ -10,15 +10,27 @@ import java.util.concurrent.TimeUnit;
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
+@Target(ElementType.METHOD)
 public @interface Limit {
 
-    int maxLimit();
+    /**
+     * @return the key used for generate redis key.
+     */
+    String key() default "";
 
-    long timeout();
+    int maxLimit() default Integer.MAX_VALUE;
 
-    TimeUnit timeUnit();
+    long timeout() default 1;
 
+    TimeUnit timeUnit() default TimeUnit.SECONDS;
+
+    /**
+     * Only used when {@link #key()} is null or empty. In most cases, you only need to
+     * set this limit level to automatically generate the key, you can also customize
+     * the value of {@link #key()} if necessary.
+     *
+     * @return limit level
+     */
     LimitLevel limitLevel() default LimitLevel.Method;
 
 }

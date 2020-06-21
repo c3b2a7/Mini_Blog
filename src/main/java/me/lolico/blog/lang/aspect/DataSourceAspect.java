@@ -1,11 +1,11 @@
 package me.lolico.blog.lang.aspect;
 
 import me.lolico.blog.lang.DynamicDataSourceContextHolder;
-import me.lolico.blog.lang.SpelAnnotationResolver;
 import me.lolico.blog.lang.annotation.DataSource;
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,23 +19,23 @@ import org.springframework.stereotype.Component;
  */
 @Aspect
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE + 1)
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public final class DataSourceAspect {
     private static final Logger logger = LoggerFactory.getLogger(DataSourceAspect.class);
 
-    @Pointcut(value = "@annotation(dataSource)", argNames = "dataSource")
-    public void pointcut(DataSource dataSource) {
+    @Pointcut("@annotation(me.lolico.blog.lang.annotation.DataSource)")
+    public void pointcut() {
     }
 
-    @Around(value = "pointcut(dataSource)", argNames = "pjp,dataSource")
-    public Object around(ProceedingJoinPoint pjp, DataSource dataSource) throws Throwable {
+    @Before(value = "pointcut() && @annotation(dataSource)")
+    public void doBefore(JoinPoint jp, DataSource dataSource) {
         String value = dataSource.value();
-        String parseValue = SpelAnnotationResolver.getValue(value, pjp, String.class);
-        DynamicDataSourceContextHolder.setKey(parseValue);
+        DynamicDataSourceContextHolder.setKey(value);
         logger.debug("使用数据库{}", value);
-        Object proceed = pjp.proceed();
-        DynamicDataSourceContextHolder.remove();
-        return proceed;
     }
 
+    @AfterReturning("pointcut()")
+    public void doAfterReturning() {
+        DynamicDataSourceContextHolder.remove();
+    }
 }

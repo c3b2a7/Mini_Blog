@@ -1,81 +1,146 @@
 package me.lolico.blog.lang.aspect;
 
-import me.lolico.blog.lang.annotation.WebLog;
-import org.aspectj.lang.JoinPoint;
-import org.aspectj.lang.annotation.*;
-import org.aspectj.lang.reflect.MethodSignature;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
+import me.lolico.blog.util.RequestUtils;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.*;
-
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.awt.image.BufferedImage;
+import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * @author Lolico Li
  */
 @Aspect
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Slf4j
+@Order(Ordered.HIGHEST_PRECEDENCE + 1)
 public class WebLogAspect {
-    private static final Logger logger = LoggerFactory.getLogger(WebLogAspect.class);
-    private static final String START_TIME = "START_TIME";
-    private static final String REQUEST_ARGS_INFO = "REQUEST_PARAMS";
-    private final ThreadLocal<Map<String, Object>> threadLocal = new ThreadLocal<>();
 
-    @Pointcut("execution(* me.lolico.blog.web..*Controller.*(..))")
+    public static final String EMPTY_BODY = "EMPTY";
+    public static final String BINARY_DATA_BODY = "BINARY DATA";
+
+    public final ObjectMapper objectMapper;
+
+    public WebLogAspect(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
+    @Pointcut("execution(*  *..*.*.controller..*Controller.*(..))")
     public void pointcut() {
     }
 
-    @Before(value = "pointcut() && @annotation(webLog)")
-    public void doBefore(JoinPoint jp, WebLog webLog) {
-        long startTime = System.currentTimeMillis();
-        Map<String, Object> threadInfo = new HashMap<>();
-        threadInfo.put(START_TIME, startTime);
-        List<String> requestArgsInfo = new ArrayList<>();
-        MethodSignature methodSignature = (MethodSignature) jp.getSignature();
-        String[] paraNames = methodSignature.getParameterNames();
-        Object[] args = jp.getArgs();
-        int argCount = args.length;
-        int paramCount = paraNames != null ? paraNames.length : methodSignature.getParameterTypes().length;
-        for (int i = 0; i < paramCount; i++) {
-            Object value = null;
-            if (argCount > paramCount && i == paramCount - 1) {
-                value = Arrays.copyOfRange(args, i, argCount);
-            } else if (argCount > i) {
-                value = args[i];
-            }
-            if (paraNames != null) {
-                requestArgsInfo.add(paraNames[i] + ":" + value);
-            }
+    @Around("pointcut()")
+    public Object webLog(ProceedingJoinPoint joinPoint) throws Throwable {
+        String className = joinPoint.getTarget().getClass().getSimpleName();
+        String methodName = joinPoint.getSignature().getName();
+        Object[] args = joinPoint.getArgs();
+
+        // Get request attribute
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        HttpServletRequest request = Objects.requireNonNull(requestAttributes).getRequest();
+
+        printRequestLog(request, className, methodName, args);
+        long start = System.currentTimeMillis();
+        Object returnObj;
+        try {
+            returnObj = joinPoint.proceed();
+        } catch (Throwable throwable) {
+            log.error("{}#{}({}) {}: [{}], Usage: [{}]ms",
+                    className,
+                    methodName,
+                    Arrays.toString(args),
+                    throwable.getClass().getSimpleName(),
+                    throwable.getMessage(),
+                    System.currentTimeMillis() - start);
+            throw throwable; // let controller advice do its work.
         }
-        threadInfo.put(REQUEST_ARGS_INFO, requestArgsInfo.toString());
-        threadLocal.set(threadInfo);
-        logger.info("{}接口开始调用:requestData={}", webLog.name(), threadInfo.get(REQUEST_ARGS_INFO));
+        printResponseLog(request, className, methodName, returnObj, System.currentTimeMillis() - start);
+        return returnObj;
     }
 
-    @AfterReturning(value = "pointcut() && @annotation(webLog)", returning = "result")
-    public void doAfterReturning(WebLog webLog, Object result) {
-        Map<String, Object> threadInfo = threadLocal.get();
-        long takeTime = System.currentTimeMillis() - (long) threadInfo.getOrDefault(START_TIME, System.currentTimeMillis());
-        if (webLog.intoDb()) {
-            //TODO insert log to database;
-            // log name, request params, result, take time
+    private void printRequestLog(HttpServletRequest request, String clazzName, String methodName, Object[] args) throws JsonProcessingException {
+        log.debug("Request URL: [{}], URI: [{}], Request Method: [{}], IP: [{}]",
+                request.getRequestURL(),
+                request.getRequestURI(),
+                request.getMethod(),
+                RequestUtils.getIp(request));
+
+        if (args == null || !log.isDebugEnabled()) {
+            return;
         }
-        threadLocal.remove();
-        logger.info("{}接口结束调用:耗时={}ms,result={}", webLog.name(), takeTime, result);
+
+        boolean shouldNotLog = false;
+        for (Object arg : args) {
+            if (arg == null ||
+                    arg instanceof HttpServletRequest ||
+                    arg instanceof HttpServletResponse ||
+                    arg instanceof MultipartFile ||
+                    arg.getClass().isAssignableFrom(MultipartFile[].class)) {
+                shouldNotLog = true;
+                break;
+            }
+        }
+
+        if (!shouldNotLog) {
+            String requestBody = objectMapper.writeValueAsString(args);
+            log.debug("{}#{} Parameters: [{}]", clazzName, methodName, requestBody);
+        }
     }
 
-    @AfterThrowing(value = "pointcut() && @annotation(webLog)", throwing = "throwable")
-    public void doAfterThrowing(WebLog webLog, Throwable throwable) {
-        Map<String, Object> threadInfo = threadLocal.get();
-        if (webLog.intoDb()) {
-            //TODO insert log to database;
-            // log name, request params
+    @SuppressWarnings("rawtypes")
+    private void printResponseLog(HttpServletRequest request, String className, String methodName, Object returnObj, long usage) throws JsonProcessingException {
+        if (log.isDebugEnabled()) {
+            String returnData = "";
+            if (returnObj != null) {
+                if (returnObj instanceof ResponseEntity) {
+                    ResponseEntity responseEntity = (ResponseEntity) returnObj;
+                    Object body = responseEntity.getBody();
+                    if (body instanceof Resource ||
+                            body instanceof BufferedImage) {
+                        returnData = BINARY_DATA_BODY;
+                    } else {
+                        returnData = body == null ? EMPTY_BODY : toString(body);
+                    }
+                } else {
+                    returnData = toString(returnObj);
+                }
+
+            }
+            log.debug("{}#{} Response: [{}], Usage: [{}]ms", className, methodName, returnData, usage);
         }
-        threadLocal.remove();
-        logger.error("{}接口调用异常，异常信息{}", webLog.name(), throwable);
+    }
+
+    @NonNull
+    private String toString(@NonNull Object obj) throws JsonProcessingException {
+        Assert.notNull(obj, "Return object must not be null");
+
+        String toString;
+        if (obj.getClass().isAssignableFrom(byte[].class) &&
+                obj instanceof Resource ||
+                obj instanceof BufferedImage) {
+            toString = BINARY_DATA_BODY;
+        } else {
+            toString = objectMapper.writeValueAsString(obj);
+        }
+        return toString;
     }
 }
+

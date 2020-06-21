@@ -1,12 +1,11 @@
 package me.lolico.blog.web.controller;
 
+import me.lolico.blog.lang.LimitLevel;
 import me.lolico.blog.lang.annotation.CheckParam;
-import me.lolico.blog.lang.annotation.DistributedLock;
-import me.lolico.blog.lang.annotation.WebLog;
+import me.lolico.blog.lang.annotation.Limit;
 import me.lolico.blog.service.MailService;
 import me.lolico.blog.service.UserService;
 import me.lolico.blog.util.CaptchaGenerator;
-import me.lolico.blog.web.LogReporter;
 import me.lolico.blog.web.vo.ApiResult;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.MediaType;
@@ -19,8 +18,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author lolico
@@ -29,11 +27,9 @@ import java.util.Map;
 @RestController
 public class PublicController {
     private final UserService userService;
-    private final ApplicationEventPublisher eventPublisher;
 
     public PublicController(UserService userService, MailService mailService, ApplicationEventPublisher eventPublisher) {
         this.userService = userService;
-        this.eventPublisher = eventPublisher;
     }
 
     @GetMapping("/confirm/{code}")
@@ -46,37 +42,19 @@ public class PublicController {
         }
     }
 
+    @Limit(maxLimit = 1, limitLevel = LimitLevel.User, timeUnit = TimeUnit.MINUTES)
     @GetMapping(value = "/img", produces = MediaType.IMAGE_JPEG_VALUE)
-    @WebLog(name = "/pub/img")
-    @DistributedLock(key = "#msg", timeout = 10)
-    public BufferedImage getImage(String msg) throws InterruptedException {
-        Thread.sleep(8000);
+    public BufferedImage getImage() {
         return CaptchaGenerator.getInstance().generateImage();
     }
 
+    @Limit(maxLimit = 1, limitLevel = LimitLevel.User, timeUnit = TimeUnit.MINUTES)
     @GetMapping(value = "/img2", produces = MediaType.IMAGE_JPEG_VALUE)
     public byte[] getImage2() throws IOException {
         BufferedImage bufferedImage = CaptchaGenerator.getInstance().generateImage();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         ImageIO.write(bufferedImage, "jpeg", outputStream);
         return outputStream.toByteArray();
-    }
-
-    @GetMapping(value = "/que")
-    @CheckParam(index = 0)
-    @WebLog(name = "/pub/que")
-    @DistributedLock(key = "#msg", timeout = 10)
-    public ApiResult get(String msg) {
-        eventPublisher.publishEvent(LogReporter.logEvent(this));
-        Map<String, Object> map = getStringBooleanMap();
-        map.put("msg", msg);
-        return ApiResult.ok(map);
-    }
-
-    private Map<String, Object> getStringBooleanMap() {
-        Map<String, Object> map = new HashMap<>();
-        map.put("answer", true);
-        return map;
     }
 
 }

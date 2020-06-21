@@ -35,6 +35,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    // @DataSource("dataSource1")
     public User findUserByName(String name) {
         return repository.findByName(name);
     }

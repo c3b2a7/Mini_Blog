@@ -2,9 +2,9 @@ package me.lolico.blog.lang.aspect;
 
 import me.lolico.blog.lang.annotation.CheckParam;
 import me.lolico.blog.lang.exception.NullParamException;
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
@@ -16,22 +16,22 @@ import org.springframework.stereotype.Component;
 @Component
 public final class CheckParamAspect {
 
-    @Pointcut(value = "@annotation(checkParam)", argNames = "checkParam")
+    @Pointcut(value = "@annotation(checkParam)")
     public void pointcut(CheckParam checkParam) {
     }
 
-    @Around(value = "pointcut(checkParam)", argNames = "pjp,checkParam")
-    public Object checkParam(ProceedingJoinPoint pjp, CheckParam checkParam) throws Throwable {
+    @Before(value = "pointcut(checkParam)", argNames = "joinPoint,checkParam")
+    public void doBefore(JoinPoint joinPoint, CheckParam checkParam) {
         int[] index = checkParam.index();
-        Object[] args = pjp.getArgs();
+        Object[] args = joinPoint.getArgs();
 
         for (int i : index) {
             if (args[i] == null && i <= args.length - 1) {
-                String parameterName = ((MethodSignature) pjp.getSignature()).getParameterNames()[i];
-                Class<?> parameterType = ((MethodSignature) pjp.getSignature()).getParameterTypes()[i];
+                String parameterName = ((MethodSignature) joinPoint.getSignature()).getParameterNames()[i];
+                Class<?> parameterType = ((MethodSignature) joinPoint.getSignature()).getParameterTypes()[i];
+
                 throw new NullParamException(parameterName, parameterType);
             }
         }
-        return pjp.proceed();
     }
 }
