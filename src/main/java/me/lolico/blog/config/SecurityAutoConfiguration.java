@@ -134,11 +134,9 @@ public class SecurityAutoConfiguration extends WebSecurityConfigurerAdapter {
 
         @Override
         public Collection<? extends GrantedAuthority> getAuthorities() {
-            if (Boolean.TRUE.equals(user.getIsAdmin())) {
-                return Arrays.asList(new SimpleGrantedAuthority("ADMIN"),
-                        new SimpleGrantedAuthority(user.getRole().getName()));
-            }
-            return Collections.singletonList(new SimpleGrantedAuthority(user.getRole().getName()));
+            return Collections.unmodifiableList(Arrays.asList(
+                    new SimpleGrantedAuthority(user.getRole().getName())
+            ));
         }
 
         @Override

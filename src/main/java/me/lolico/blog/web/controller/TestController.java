@@ -28,7 +28,7 @@ public class TestController {
 
     @GetMapping("/getMsg")
     @DistributedLock(key = "#msg", timeout = 10)
-    @PreAuthorize("hasAnyRole('VISITOR','USER')")
+    @PreAuthorize("hasAnyRole('ADMIN','USER','VISITOR')")
     public String getMsg(String msg) {
         return msg;
     }
@@ -37,7 +37,7 @@ public class TestController {
     @GetMapping("/get")
     @CheckParam(index = 0)
     @DistributedLock(key = "#msg", timeout = 10)
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('ADMIN','USER')")
     public ApiResult get(String msg) {
         eventPublisher.publishEvent(LogReporter.logEvent(this));
         Map<String, Object> map = new HashMap<>();

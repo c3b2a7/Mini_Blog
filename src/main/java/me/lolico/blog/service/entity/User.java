@@ -50,9 +50,6 @@ public class User {
     @Column(name = "user_status")
     private Status status;
 
-    @Column(name = "user_is_admin")
-    private Boolean isAdmin;
-
     @Column(name = "user_image", length = 64)
     private String image;
 

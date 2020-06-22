@@ -9,7 +9,6 @@ import me.lolico.blog.util.RequestUtils;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Base64Utils;
 import org.springframework.util.DigestUtils;
 import org.springframework.util.StringUtils;
@@ -69,7 +68,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
     public User registerAnAccount(User user) {
         if (isExist(user.getName(), user.getEmail(), user.getPhone())) {
             return null;
