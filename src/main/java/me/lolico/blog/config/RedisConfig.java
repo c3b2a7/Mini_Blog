@@ -16,6 +16,9 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,7 +31,7 @@ public class RedisConfig {
 
     @Bean
     public KeyGenerator keyGenerator() {
-        return (target, method, params) -> String.format("%s#%s(%s)",
+        return (target, method, params) -> String.format("%s:%s(%s)",
                 target.getClass().getName(),
                 method.getName(),
                 Stream.of(params).map(String::valueOf).collect(Collectors.joining(",")));
@@ -66,11 +69,17 @@ public class RedisConfig {
         return stringRedisTemplate;
     }
 
-    public CacheManager cacheManager(RedisTemplate<?, ?> redisTemplate) {
-        RedisCacheWriter redisCacheWriter = RedisCacheWriter.nonLockingRedisCacheWriter(redisTemplate.getRequiredConnectionFactory());
-        RedisCacheConfiguration redisCacheConfiguration = RedisCacheConfiguration.defaultCacheConfig()
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(redisTemplate.getValueSerializer()));
-        return new RedisCacheManager(redisCacheWriter, redisCacheConfiguration);
+    public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
+        RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(RedisSerializer.string()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(RedisSerializer.json()));
+        Map<String, RedisCacheConfiguration> map = new HashMap<>();
+        map.put("oneDay", defaultCacheConfig.entryTtl(Duration.ofDays(1L)));
+        map.put("oneMin", defaultCacheConfig.entryTtl(Duration.ofMinutes(1L)));
+        return RedisCacheManager.builder(RedisCacheWriter
+                .lockingRedisCacheWriter(redisConnectionFactory))
+                .cacheDefaults(defaultCacheConfig).withInitialCacheConfigurations(map)
+                .transactionAware().build();
     }
 
     /**

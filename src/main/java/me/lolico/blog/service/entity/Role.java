@@ -3,6 +3,7 @@ package me.lolico.blog.service.entity;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.io.Serializable;
 
 /**
  * @author Lolico Li
@@ -10,7 +11,9 @@ import javax.persistence.*;
 @Data
 @Entity
 @Table(name = "blog_roles")
-public class Role {
+public class Role implements Serializable {
+
+    public static final String PREFIX = "ROLE_";
 
     @Id
     @Column(name = "role_id")

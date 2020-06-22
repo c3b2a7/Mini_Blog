@@ -11,23 +11,20 @@ import org.springframework.stereotype.Service;
 @Service
 public class RoleServiceImpl implements RoleService {
 
-    public static final String PREFIX = "ROLE_";
-
     private final RoleRepository roleRepository;
 
     public RoleServiceImpl(RoleRepository roleRepository) {
         this.roleRepository = roleRepository;
     }
 
-
     @Override
     public Role addRole(String name) {
-        return createRole(name, true);
+        return createRole(ensureRoleName(name), true);
     }
 
     @Override
     public Role findRole(String name) {
-        return roleRepository.findByName(name);
+        return roleRepository.findByName(ensureRoleName(name));
     }
 
     @Override
@@ -37,20 +34,23 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public Role createRole(String name, boolean persist) {
-        String roleName = generateName(name);
-        Role existRole = findRole(roleName);
+        name = ensureRoleName(name);
+        Role existRole = findRole(name);
         if (existRole != null) {
             return existRole;
         }
         Role role = new Role();
-        role.setName(roleName);
+        role.setName(name);
         if (persist) {
             return roleRepository.save(role);
         }
         return role;
     }
 
-    private String generateName(String name) {
-        return PREFIX + name;
+    private String ensureRoleName(String name) {
+        if (!name.startsWith(Role.PREFIX)) {
+            return Role.PREFIX + name;
+        }
+        return name;
     }
 }
