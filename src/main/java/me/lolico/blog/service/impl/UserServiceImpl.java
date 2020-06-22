@@ -1,20 +1,27 @@
 package me.lolico.blog.service.impl;
 
+import me.lolico.blog.service.RoleService;
 import me.lolico.blog.service.UserService;
+import me.lolico.blog.service.entity.Role;
 import me.lolico.blog.service.entity.User;
 import me.lolico.blog.service.repo.UserRepository;
+import me.lolico.blog.util.RequestUtils;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Base64Utils;
 import org.springframework.util.DigestUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.persistence.criteria.Predicate;
 import javax.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -24,10 +31,12 @@ import java.util.Optional;
 @Service
 public class UserServiceImpl implements UserService {
     private final UserRepository repository;
+    private final RoleService roleService;
     private final PasswordEncoder passwordEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
 
-    public UserServiceImpl(UserRepository repository) {
+    public UserServiceImpl(UserRepository repository, RoleService roleService) {
         this.repository = repository;
+        this.roleService = roleService;
     }
 
     public PasswordEncoder getPasswordEncoder() {
@@ -67,11 +76,13 @@ public class UserServiceImpl implements UserService {
         }
         HttpServletRequest request = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest();
 
-        user.setRegistrationIp(request.getRemoteAddr());
+        user.setRegistrationIp(RequestUtils.getIp(request));
         user.setRegistrationTime(Timestamp.from(Instant.now()));
         user.setRegistrationTime(new Timestamp(Instant.now().getEpochSecond() * 1000));
-        user.setStatus(User.Status.WAITING_CONFIRMATION);
+        user.setStatus(User.Status.VALID);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        Role visitor = roleService.createRole("VISITOR", true);
+        user.setRole(visitor);
 
         return repository.save(user);
     }
@@ -134,5 +145,33 @@ public class UserServiceImpl implements UserService {
             return String.valueOf(user.getRegistrationTime().getTime() / 1000L + 1);
         }
         return String.valueOf(user.getRegistrationTime().getTime() / 1000L);
+    }
+
+    @Override
+    public void delete(int id) {
+        if (id > 0) {
+            repository.deleteById((long) id);
+            return;
+        }
+        throw new IllegalArgumentException("id must be greater than zero");
+    }
+
+    public List<User> dynamicFind(User user) {
+        return repository.findAll((root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (user.getId() > 0) {
+                predicates.add(criteriaBuilder.equal(root.<Integer>get("id"), user.getId()));
+            }
+            if (!StringUtils.isEmpty(user.getName())) {
+                predicates.add(criteriaBuilder.equal(root.<String>get("username"), user.getName()));
+            }
+            if (!StringUtils.isEmpty(user.getPassword())) {
+                predicates.add(criteriaBuilder.equal(root.<String>get("password"), user.getPassword()));
+            }
+            if (!StringUtils.isEmpty(user.getEmail())) {
+                predicates.add(criteriaBuilder.equal(root.<String>get("email"), user.getEmail()));
+            }
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        });
     }
 }

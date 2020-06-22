@@ -94,15 +94,17 @@ public class SecurityAutoConfiguration extends WebSecurityConfigurerAdapter {
                 .cors()
                 .and()
                 .authorizeRequests()
-                .antMatchers("/public/**").permitAll()
+                .antMatchers("/public/**", "/account/**").permitAll()
                 .anyRequest().authenticated() //任何请求都需要认证
                 .and()
                 .apply(new BearerAuthzConfigurer<>(headerName, prefix)) // 应用token认证配置器
                 .and()
                 .apply(new LoginAuthzConfigurer<>()) // 应用表单登录配置器
+                .processingUrl("/account/login")
                 .successHandler(new TokenReturningAuthenticationSuccessHandler(headerName, prefix, true))
                 .and()
                 .logout()
+                .logoutUrl("/account/logout")
                 .addLogoutHandler(new TokenClearLogoutHandler()) // 登出后清除token
                 .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK));
     }
@@ -132,7 +134,7 @@ public class SecurityAutoConfiguration extends WebSecurityConfigurerAdapter {
 
         @Override
         public Collection<? extends GrantedAuthority> getAuthorities() {
-            if (user.getIsAdmin().equals(Boolean.TRUE)) {
+            if (Boolean.TRUE.equals(user.getIsAdmin())) {
                 return Arrays.asList(new SimpleGrantedAuthority("ADMIN"),
                         new SimpleGrantedAuthority(user.getRole().getName()));
             }

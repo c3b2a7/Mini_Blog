@@ -24,4 +24,6 @@ public interface UserService {
     boolean isDisable(User user);
 
     String getSalt(User user);
+
+    void delete(int id);
 }

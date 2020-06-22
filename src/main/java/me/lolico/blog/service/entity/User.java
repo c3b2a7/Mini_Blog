@@ -1,200 +1,67 @@
 package me.lolico.blog.service.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Data;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
-import java.util.Objects;
 
 /**
  * @author lolico
  */
+@Data
 @Entity
-@Table(name = "blog_users", schema = "mini_blog")
+@Table(name = "blog_users")
 public class User {
-    private Long id;
-    private String name;
-    private String nickName;
-    private String password;
-    private String email;
-    private Timestamp registrationTime;
-    private Timestamp lastLoginTime;
-    private Timestamp lastLogoutTime;
-    private String registrationIp;
-    private String lastLoginIp;
-    private Status status;
-    private Boolean isAdmin;
-    private String image;
-    private String phone;
-
     @Id
     @Column(name = "user_id", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long getId() {
-        return id;
-    }
+    private Long id;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    @Basic
     @Column(name = "user_name", nullable = false, length = 64)
-    public String getName() {
-        return name;
-    }
+    private String name;
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    @Basic
     @Column(name = "user_nick_name", length = 64)
-    public String getNickName() {
-        return nickName;
-    }
+    private String nickName;
 
-    public void setNickName(String nickName) {
-        this.nickName = nickName;
-    }
-
-    @Basic
     @JsonIgnore
     @Column(name = "user_password", nullable = false, length = 64)
-    public String getPassword() {
-        return password;
-    }
+    private String password;
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    @Basic
     @Column(name = "user_email", nullable = false, length = 64)
-    public String getEmail() {
-        return email;
-    }
+    private String email;
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    @Basic
     @Column(name = "user_registration_time")
-    public Timestamp getRegistrationTime() {
-        return registrationTime;
-    }
+    private Timestamp registrationTime;
 
-    public void setRegistrationTime(Timestamp registrationTime) {
-        this.registrationTime = registrationTime;
-    }
-
-    @Basic
     @Column(name = "user_last_login_time")
-    public Timestamp getLastLoginTime() {
-        return lastLoginTime;
-    }
+    private Timestamp lastLoginTime;
 
-    public void setLastLoginTime(Timestamp lastLoginTime) {
-        this.lastLoginTime = lastLoginTime;
-    }
-
-    @Basic
     @Column(name = "user_last_logout_time")
-    public Timestamp getLastLogoutTime() {
-        return lastLogoutTime;
-    }
+    private Timestamp lastLogoutTime;
 
-    public void setLastLogoutTime(Timestamp lastLogoutTime) {
-        this.lastLogoutTime = lastLogoutTime;
-    }
-
-    @Basic
     @Column(name = "user_registration_ip", length = 32)
-    public String getRegistrationIp() {
-        return registrationIp;
-    }
+    private String registrationIp;
 
-    public void setRegistrationIp(String registrationIp) {
-        this.registrationIp = registrationIp;
-    }
-
-    @Basic
     @Column(name = "user_last_login_ip", length = 32)
-    public String getLastLoginIp() {
-        return lastLoginIp;
-    }
+    private String lastLoginIp;
 
-    public void setLastLoginIp(String lastLoginIp) {
-        this.lastLoginIp = lastLoginIp;
-    }
-
-    @Basic
     @Enumerated(EnumType.STRING)
     @Column(name = "user_status")
-    public Status getStatus() {
-        return status;
-    }
+    private Status status;
 
-    public void setStatus(Status status) {
-        this.status = status;
-    }
-
-    @Basic
     @Column(name = "user_is_admin")
-    public Boolean getIsAdmin() {
-        return isAdmin;
-    }
+    private Boolean isAdmin;
 
-    public void setIsAdmin(Boolean isAdmin) {
-        this.isAdmin = isAdmin;
-    }
-
-    @Basic
     @Column(name = "user_image", length = 64)
-    public String getImage() {
-        return image;
-    }
+    private String image;
 
-    public void setImage(String image) {
-        this.image = image;
-    }
-
-    @Basic
     @Column(name = "user_phone", length = 11)
-    public String getPhone() {
-        return phone;
-    }
+    private String phone;
 
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, name, nickName, password, email, registrationTime, lastLoginTime, lastLogoutTime, registrationIp, lastLoginIp, status, isAdmin, image, phone);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        User user = (User) o;
-        return Objects.equals(id, user.id) &&
-                Objects.equals(name, user.name) &&
-                Objects.equals(nickName, user.nickName) &&
-                Objects.equals(password, user.password) &&
-                Objects.equals(email, user.email) &&
-                Objects.equals(registrationTime, user.registrationTime) &&
-                Objects.equals(lastLoginTime, user.lastLoginTime) &&
-                Objects.equals(lastLogoutTime, user.lastLogoutTime) &&
-                Objects.equals(registrationIp, user.registrationIp) &&
-                Objects.equals(lastLoginIp, user.lastLoginIp) &&
-                Objects.equals(status, user.status) &&
-                Objects.equals(isAdmin, user.isAdmin) &&
-                Objects.equals(image, user.image) &&
-                Objects.equals(phone, user.phone);
-    }
+    @OneToOne(cascade = {CascadeType.MERGE})
+    @JoinColumn(name = "role_id")
+    private Role role;
 
     public enum Status {
         VALID, LOCKING, WAITING_CONFIRMATION
