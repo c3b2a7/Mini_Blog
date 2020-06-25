@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration debug="false" scan="true" scanPeriod="30 seconds">
+
+    <!--彩色日志扩展以及异常信息包装扩展-->
+    <conversionRule conversionWord="clr"
+                    converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
+    <conversionRule conversionWord="wex"
+                    converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter"/>
+    <conversionRule conversionWord="wEx"
+                    converterClass="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter"/>
+
+    <!--日志文件前缀-->
+    <property name="logfile.prefix" value="Mini_Blog"/>
+    <!--日志文件路径，相对路径/绝对路径-->
+    <property name="log.path" value="logs"/>
+
+    <!--Console彩色日志格式-->
+    <property name="CONSOLE_LOG_PATTERN"
+              value="${CONSOLE_LOG_PATTERN:-%clr(%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
+    <!--文件日志格式-->
+    <property name="FILE_LOG_PATTERN"
+              value="[%level] %d{HH:mm:ss.SSS} [%15.15thread] %-40.40logger{39} : %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
+
+    <!--Console输出日志-->
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+        </encoder>
+        <!--INFO以上-->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>DEBUG</level>
+            <onMatch>DENY</onMatch>
+            <onMismatch>NEUTRAL</onMismatch>
+        </filter>
+    </appender>
+
+    <!--文件输出日志-->
+    <appender name="infofile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--日志文件路径及文件名-->
+        <file>${log.path}/${logfile.prefix}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!--文件名格式-->
+            <fileNamePattern>${log.path}/${logfile.prefix}.%d{yyyy-MM-dd}.%i.log.gz
+            </fileNamePattern>
+            <!--文件最大大小-->
+            <maxFileSize>10MB</maxFileSize>
+            <!--总大小-->
+            <totalSizeCap>100MB</totalSizeCap>
+            <!--日志保留天数 -->
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <!--日志输出格式 -->
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+        </encoder>
+        <!--过滤器，只记录INFO级别的日志 -->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+
+    <appender name="warnfile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${log.path}/warn/${logfile.prefix}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log.path}/warn/${logfile.prefix}.%d{yyyy-MM-dd}.log
+            </fileNamePattern>
+            <maxHistory>15</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+
+    <appender name="errorfile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${log.path}/error/${logfile.prefix}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log.path}/error/${logfile.prefix}.%d{yyyy-MM-dd}.log
+            </fileNamePattern>
+            <maxHistory>15</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+
+    <!--基本规则-->
+    <!--1. 终端接受所有logger的INFO及以上信息，彩色输出-->
+    <!--2. 文件日志分级写入，只接受INFO及以上信息-->
+    <!--3. 自定义logger输出策略并使用additivity="false"阻止向root传递-->
+
+    <!--自定义日志输出策略，将项目中DEBUG以上日志输出到终端，并且不向root传递日志内容-->
+    <logger name="me.lolico.blog" level="DEBUG" additivity="false">
+        <appender-ref ref="console"/>
+    </logger>
+
+    <!--日志输出 -->
+    <root>
+        <appender-ref ref="console"/>
+        <appender-ref ref="infofile"/>
+        <appender-ref ref="warnfile"/>
+        <appender-ref ref="errorfile"/>
+    </root>
+</configuration>
