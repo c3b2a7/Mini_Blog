@@ -15,7 +15,7 @@ import org.springframework.util.ErrorHandler;
  */
 @Configuration
 @EnableAsync
-public class AsyncConfig {
+public class AsyncAutoConfiguration {
 
     @Bean(AbstractApplicationContext.APPLICATION_EVENT_MULTICASTER_BEAN_NAME)
     public ApplicationEventMulticaster applicationEventMulticaster() {

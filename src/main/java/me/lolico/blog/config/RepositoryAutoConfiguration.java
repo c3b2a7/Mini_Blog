@@ -13,6 +13,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(basePackageClasses = BaseRepository.class, repositoryBaseClass = BaseRepositoryImpl.class)
-public class RepositoryConfig {
+public class RepositoryAutoConfiguration {
     // ...
 }

@@ -22,7 +22,7 @@ import java.util.Map;
  * @author lolico
  */
 @Configuration
-public class WebMvcConfig implements WebMvcConfigurer {
+public class WebMvcAutoConfiguration implements WebMvcConfigurer {
 
     //==================
     // Customized Beans

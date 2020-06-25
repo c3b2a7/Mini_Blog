@@ -27,7 +27,7 @@ import java.util.stream.Stream;
  */
 @Configuration
 @EnableCaching(proxyTargetClass = true)
-public class RedisConfig {
+public class RedisAutoConfiguration {
 
     @Bean
     public KeyGenerator keyGenerator() {
