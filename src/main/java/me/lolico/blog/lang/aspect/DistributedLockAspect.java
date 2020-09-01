@@ -44,23 +44,25 @@ public final class DistributedLockAspect {
 
     @Around(value = "pointcut(lock)", argNames = "pjp,lock")
     public Object around(ProceedingJoinPoint pjp, DistributedLock lock) throws Throwable {
-        String key = getKey(pjp, lock);
-        String value = getLock(key, lock.timeout(), lock.timeUnit());
+        String key = generateKey(pjp, lock);
+        String value = acquireLock(key, lock.timeout(), lock.timeUnit());
         if (!StringUtils.hasLength(value)) {
-            // 获取锁失败
-            return ApiResult.status(HttpStatus.LOCKED, "接口被锁定");
+            // Return directly may cause ClassCastException, should throw an exception
+            // include the status code and message here and then handle it better in
+            // exception handler of controller advice.
+            return ApiResult.status(HttpStatus.LOCKED, "interface is locked");
         }
-        // 获取锁成功
+        // acquire Lock successful
         try {
             return pjp.proceed();
         } finally {
-            // 释放锁
+            // release lock
             releaseLock(key, value);
         }
 
     }
 
-    private String getKey(JoinPoint jp, DistributedLock lock) {
+    private String generateKey(JoinPoint jp, DistributedLock lock) {
         Method method = ((MethodSignature) jp.getSignature()).getMethod();
         String key = lock.key();
         if (!StringUtils.isEmpty(key)) {
@@ -72,22 +74,25 @@ public final class DistributedLockAspect {
         return key;
     }
 
-    private String getLock(String key, long timeout, TimeUnit timeUnit) {
+    private String acquireLock(String key, long timeout, TimeUnit timeUnit) {
         try {
+            // It is better to use the snowflake algorithm to generate a globally unique id
             String value = UUID.randomUUID().toString();
             Boolean lockStat = redisTemplate.opsForValue().setIfAbsent(key, value, timeout, timeUnit);
             if (lockStat == null || !lockStat) {
-                // 获取锁失败
+                // acquire Lock failed
                 return null;
             }
             return value;
         } catch (Exception e) {
+            // acquire Lock failed because of an exception occurred, log it
             logger.error("获取分布式锁失败，key={}", key, e);
             return null;
         }
     }
 
     private void releaseLock(String key, String value) {
+        // just try to release this lock and the result we dont care
         try {
             String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
             DefaultRedisScript<Boolean> redisScript = new DefaultRedisScript<>(script, Boolean.class);

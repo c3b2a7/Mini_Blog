@@ -133,7 +133,7 @@ public class WebLogAspect {
         Assert.notNull(obj, "Return object must not be null");
 
         String toString;
-        if (obj.getClass().isAssignableFrom(byte[].class) &&
+        if (obj.getClass().isAssignableFrom(byte[].class) ||
                 obj instanceof Resource ||
                 obj instanceof BufferedImage) {
             toString = BINARY_DATA_BODY;

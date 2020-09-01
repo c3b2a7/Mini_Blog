@@ -1,7 +1,9 @@
 package me.lolico.blog.lang;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.Assert;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
@@ -11,10 +13,11 @@ import java.util.Optional;
 @Slf4j
 public class DynamicDataSourceContextHolder {
     private final static ThreadLocal<String> KEY = new ThreadLocal<>();
-    private static Map<Object, Object> targetDataSourceMap;
+    private static Map<Object, Object> targetDataSourceMap = Collections.emptyMap();
     private static String defaultKey;
 
     public static void setDataSourceMap(Map<Object, Object> targetDataSourceMap) {
+        Assert.notNull(targetDataSourceMap, "targetDataSourceMap must not be null!");
         DynamicDataSourceContextHolder.targetDataSourceMap = targetDataSourceMap;
     }
 
@@ -34,7 +37,7 @@ public class DynamicDataSourceContextHolder {
 
     public static void setDefaultKey(String defaultKey) {
         if (log.isDebugEnabled()) {
-            log.debug("设置defaultKey:[{}]", defaultKey);
+            log.debug("Set default Key: '{}'", defaultKey);
         }
         DynamicDataSourceContextHolder.defaultKey = defaultKey;
     }
