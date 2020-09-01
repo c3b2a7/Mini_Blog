@@ -15,11 +15,8 @@ public class TokenClearLogoutHandler implements LogoutHandler {
     }
 
     protected void clearToken(Authentication authentication) {
-        if (authentication == null)
-            return;
-        String loginName = authentication.getName();
-        if (loginName != null) {
-            JwtUtils.deleteUserLoginInfo(loginName);
+        if (authentication != null && authentication.getName() != null) {
+            JwtUtils.deleteUserLoginInfo(authentication.getName());
         }
     }
 

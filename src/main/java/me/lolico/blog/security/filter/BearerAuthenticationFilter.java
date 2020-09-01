@@ -1,7 +1,6 @@
 package me.lolico.blog.security.filter;
 
 import me.lolico.blog.security.auth.BearerAuthenticationEntryPoint;
-import me.lolico.blog.security.auth.BearerAuthenticationToken;
 import me.lolico.blog.security.converter.BearerAuthenticationConverter;
 import me.lolico.blog.security.handler.TokenReturningAuthenticationSuccessHandler;
 import org.springframework.context.ApplicationEventPublisher;
@@ -54,7 +53,7 @@ public class BearerAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        BearerAuthenticationToken authRequest = authenticationConverter.convert(request);
+        Authentication authRequest = authenticationConverter.convert(request);
         try {
             if (authRequest == null) {
                 filterChain.doFilter(request, response);

@@ -2,6 +2,7 @@ package me.lolico.blog.security.converter;
 
 import me.lolico.blog.security.auth.BearerAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationDetailsSource;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationConverter;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.Assert;
@@ -48,7 +49,7 @@ public class BearerAuthenticationConverter implements AuthenticationConverter {
     }
 
     @Override
-    public BearerAuthenticationToken convert(HttpServletRequest request) {
+    public Authentication convert(HttpServletRequest request) {
         String header = request.getHeader(AUTHORIZATION_HEADER);
         if (header == null) {
             return null;
