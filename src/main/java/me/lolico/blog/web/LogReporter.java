@@ -1,7 +1,7 @@
 package me.lolico.blog.web;
 
-import me.lolico.blog.lang.BeanSelfProxyAware;
 import me.lolico.blog.lang.annotation.CheckParam;
+import me.lolico.blog.lang.plugin.BeanSelfProxyAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEvent;

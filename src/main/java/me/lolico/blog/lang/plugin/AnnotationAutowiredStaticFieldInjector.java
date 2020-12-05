@@ -1,5 +1,6 @@
-package me.lolico.blog.lang;
+package me.lolico.blog.lang.plugin;
 
+import me.lolico.blog.lang.SpelAnnotationResolver;
 import me.lolico.blog.util.JwtUtils;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;

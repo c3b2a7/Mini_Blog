@@ -1,4 +1,4 @@
-package me.lolico.blog.lang;
+package me.lolico.blog.lang.plugin;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.Ordered;
@@ -7,6 +7,7 @@ import org.springframework.core.Ordered;
  * @author Lolico Li
  */
 public interface SystemBootPlugin extends Ordered {
+
     void onReady(ApplicationContext applicationContext);
 
     default String getName() {
@@ -16,5 +17,4 @@ public interface SystemBootPlugin extends Ordered {
     default int getOrder() {
         return LOWEST_PRECEDENCE;
     }
-
 }

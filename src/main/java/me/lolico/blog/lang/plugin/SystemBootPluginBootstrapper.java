@@ -1,4 +1,4 @@
-package me.lolico.blog.lang;
+package me.lolico.blog.lang.plugin;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,15 +18,16 @@ import java.util.List;
  * @author Lolico Li
  */
 @Component
-public class SystemBootPluginManager implements ApplicationListener<ContextRefreshedEvent>, Ordered {
+public class SystemBootPluginBootstrapper implements ApplicationListener<ContextRefreshedEvent>, Ordered {
 
-    private static final Logger logger = LoggerFactory.getLogger(SystemBootPluginManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(SystemBootPluginBootstrapper.class);
     private List<SystemBootPlugin> systemBootPlugins = Collections.emptyList();
+    private final Object monitor = new Object();
     private boolean hasRunOnce = false;
 
     @Autowired(required = false)
     public void setSystemBootPlugins(List<SystemBootPlugin> systemBootPlugins) {
-        Assert.notEmpty(systemBootPlugins, "SystemBootAddons must not be empty");
+        Assert.notEmpty(systemBootPlugins, "systemBootPlugins must not be empty");
         OrderComparator.sort(systemBootPlugins);
         this.systemBootPlugins = systemBootPlugins;
     }
@@ -34,18 +35,23 @@ public class SystemBootPluginManager implements ApplicationListener<ContextRefre
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         if (!hasRunOnce) {
-            ApplicationContext applicationContext = event.getApplicationContext();
-            systemBootPlugins.forEach(systemBootPlugin -> {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Execute plugin:{}", systemBootPlugin.getName());
+            synchronized (monitor) {
+                if (!hasRunOnce) {
+                    logger.info("Found {} system boot plugin(s)", systemBootPlugins.size());
+                    bootSystemPlugins(event.getApplicationContext());
+                    hasRunOnce = true;
                 }
-                systemBootPlugin.onReady(applicationContext);
-            });
-            hasRunOnce = true;
-        } else {
-            if (logger.isDebugEnabled()) {
-                logger.debug("The system plugins have been loaded");
             }
+        }
+    }
+
+    private void bootSystemPlugins(ApplicationContext applicationContext) {
+        int i = 0;
+        for (SystemBootPlugin plugin : systemBootPlugins) {
+            if (logger.isDebugEnabled()) {
+                logger.info("Booting {}th plugin: {}", ++i, plugin.getName());
+            }
+            plugin.onReady(applicationContext);
         }
     }
 

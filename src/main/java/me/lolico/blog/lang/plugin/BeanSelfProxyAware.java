@@ -1,4 +1,4 @@
-package me.lolico.blog.lang;
+package me.lolico.blog.lang.plugin;
 
 /**
  * @author Lolico Li
