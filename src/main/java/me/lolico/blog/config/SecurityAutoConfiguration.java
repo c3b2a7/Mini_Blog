@@ -26,6 +26,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -111,7 +112,15 @@ public class SecurityAutoConfiguration extends WebSecurityConfigurerAdapter {
 
     @Bean
     public DaoUserDetailsService getUserDetailsService() {
-        return new DaoUserDetailsService(s -> new UserDelegator(userService.findUserForLogin(s)));
+        return new DaoUserDetailsService(this::apply);
+    }
+
+    private UserDetails apply(String username) {
+        User user = userService.findUserForLogin(username);
+        if (user == null) {
+            throw new UsernameNotFoundException(username);
+        }
+        return new UserDelegator(user);
     }
 
     @Bean
