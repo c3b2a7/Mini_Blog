@@ -3,14 +3,21 @@ package me.lolico.blog.web.vo;
 import lombok.Data;
 import me.lolico.blog.service.entity.User;
 
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+
 /**
  * @author lolico
  */
 @Data
 public class UserVO {
+    @NotBlank
     private String username;
+    @NotBlank
     private String password;
+    @Email
     private String email;
+    @NotBlank
     private String phone;
 
     public User castEntity() {

@@ -24,6 +24,7 @@ public final class FunctionalAspect implements ApplicationListener<ContextRefres
      * @param event ContextRefreshedEvent object
      * @see org.springframework.boot.context.event
      */
+    @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         if (logger.isDebugEnabled()) {
             logger.debug("ApplicationContext '{}' has refreshed", event.getApplicationContext());

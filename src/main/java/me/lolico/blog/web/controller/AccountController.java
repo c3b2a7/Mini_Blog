@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
 import java.io.FileNotFoundException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -34,16 +35,13 @@ public class AccountController {
     }
 
     @PostMapping("/register")
-    public ApiResult register(@RequestBody UserVO userVO, HttpServletRequest request) throws FileNotFoundException, MessagingException, UnknownHostException {
+    public ApiResult register(@RequestBody @Valid UserVO userVO, HttpServletRequest request) throws FileNotFoundException, MessagingException, UnknownHostException {
         User user = userVO.castEntity();
         Optional<User> optionalUser = Optional.ofNullable(userService.registerAnAccount(user));
         if (optionalUser.isPresent()) {
             String code = userService.generateMailConfirmationCode(user.getEmail());
             String url = prepareConfirmationUrl(request.getLocalPort(), code);
-            String text = "<h3>验证你的邮箱</h3>" +
-                    "<p>前往链接完成验证：</p>" +
-                    "<p><a href=\"http://%s\">http://%s</a></p>";
-            mailService.sendHtmlMessage(user.getEmail(), "邮箱验证", text, url, url);
+            mailService.sendHtmlMessage(user.getEmail(), "邮箱验证", Constants.MAIL_CONFIRMATION_TEXT, url, url);
             return ApiResult.ok("注册成功");
         }
         return ApiResult.ok("用户已存在");

@@ -19,10 +19,12 @@ public class BearerAuthenticationEntryPoint implements AuthenticationEntryPoint 
     }
 
     public BearerAuthenticationEntryPoint(String realmName) {
-        if (realmName != null)
+        if (realmName != null) {
             this.realmName = realmName;
+        }
     }
 
+    @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
         response.addHeader("WWW-Authenticate", "Bearer realm=\"" + realmName + "\"");

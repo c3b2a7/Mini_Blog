@@ -80,13 +80,8 @@ public class ApiResult {
         }
 
         public ApiResultBuilder withStatus(@NonNull HttpStatus httpStatus) {
-            if (this.code == null) {
-                this.code = httpStatus.value();
-            }
             this.code = httpStatus.value();
-            if (this.message == null) {
-                this.message = httpStatus.getReasonPhrase();
-            }
+            this.message = httpStatus.getReasonPhrase();
             if (httpStatus.isError()) {
                 this.status = "error";
             } else {

@@ -60,6 +60,9 @@
         </el-aside>
         <el-container>
             <el-header style="text-align: right; font-size: 12px">
+                <el-select size="mini" v-model="path" @change="routeToPath" filterable style="padding-right: 10px">
+                    <el-option v-for="item in options" :key="item.lable" :label="item.lable" :value="item.path"></el-option>
+                </el-select>
                 <el-dropdown>
                     <i class="el-icon-setting" style="margin-right: 15px"></i>
                     <el-dropdown-menu slot="dropdown">
@@ -90,6 +93,7 @@
     <p>{{countComputed}}</p>
     <cus :count="count" :parentMsg="color" @func="add"></cus>
     <children ref="child"></children>
+    <router-view></router-view>
 </div>
 <template id="btn">
     <div>
@@ -109,112 +113,139 @@
     }
 </style>
 <script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
 <script src="https://unpkg.com/element-ui/lib/index.js"></script>
 <script>
-    var btn = {
-        template: '#btn',
-        data() {
-            return {
-                count: 0
-            }
-        },
-        methods: {
-            add() {
-                this.count++;
-            }
-        }
+  const btn = {
+    template: '#btn',
+    data () {
+      return {
+        count: 0
+      }
+    },
+    methods: {
+      add () {
+        this.count++
+      }
     }
-    const app = new Vue({
-        el: '#app',
-        data: function () {
-            const item = {
-                date: '2016-05-02',
-                name: '王小虎',
-                address: '上海市普陀区金沙江路 1518 弄'
-            };
-            return {
-                count: 1,
-                color: 'red',
-                tableData: Array(20).fill(item)
-            }
+  }
+  const foo = { template: '<div>foo</div>' }
+  const bar = { template: '<div>bar</div>' }
+  const app = new Vue({
+    router: new VueRouter({
+      routes: [
+        { path: '/foo', component: foo },
+        { path: '/bar', component: bar },
+        { path: '/btn', component: btn }
+      ]
+    }),
+    el: '#app',
+    data: function () {
+      const item = {
+        date: '2016-05-02',
+        name: '王小虎',
+        address: '上海市普陀区金沙江路 1518 弄'
+      }
+      return {
+        path: '',
+        options: [
+          { lable: '问题列表', path: '/problem/index' },
+          { lable: '需求列表', path: '/requirement/index' },
+          { lable: '环境列表', path: '/env/index' },
+          { lable: '工单列表', path: '/sheet/index' },
+          { lable: '缺陷列表', path: '/bug/index' },
+          { lable: 'btn', path: '/btn' },
+          { lable: 'bar', path: '/bar' },
+          { lable: 'foo', path: '/foo' },
+        ],
+        count: 1,
+        color: 'red',
+        tableData: Array(20).fill(item)
+      }
+    },
+    components: {
+      'children': btn,
+      'cus': {
+        props: ['parentmsg', 'count'],
+        template: `
+          <div>
+          <p>我是父组件传递来的数据：{{ parentmsg }}</p>
+          <p @click="add">自己的数据：{{ childMsg }} {{ count }}</p>
+          <p>我要调用父组件传递过来的方法</p>
+          <button @click="$emit('func')">点我调用父组件传递的方法（父组件count自增）
+          </button>
+          <cus-input v-model="childMsg"></cus-input>
+          </div>
+        `,
+        data () {
+          return { childMsg: 'child msg' }
         },
         components: {
-            'children': btn,
-            'cus': {
-                props: ['parentmsg', 'count'],
-                template: `
-                    <div>
-                        <p>我是父组件传递来的数据：{{parentmsg}}</p>
-                        <p @click="add">自己的数据：{{childMsg}} {{count}}</p>
-                        <p>我要调用父组件传递过来的方法</p>
-                        <button @click="$emit('func')">点我调用父组件传递的方法（父组件count自增）
-                        </button>
-                        <cus-input v-model="childMsg"></cus-input>
-                    </div>
-                `,
-                data() {
-                    return {childMsg: "child msg"}
-                },
-                components: {
-                    'cus-input': {
-                        props: ['value'],
-                        template: `
-                            <div>
-                                <input :bind="value"
-                                       @input="$emit('input',$event.target.value)">
-                                <p>{{value}}</p>
-                            </div>
-                        `
-                    }
-                },
-                methods: {
-                    add() {
-                        this.count++
-                    }
-                }
-            },
-
-        },
-        computed: {
-            countComputed() {
-                return this.count + 1
-            }
+          'cus-input': {
+            props: ['value'],
+            template: `
+              <div>
+              <input :bind="value"
+                     @input="$emit('input',$event.target.value)">
+              <p>{{ value }}</p>
+              </div>
+            `
+          }
         },
         methods: {
-            add: function (num) {
-                if (num) {
-                    this.count += num
-                } else {
-                    this.count++;
-                    this.$refs.child.add();
-                }
-            },
-            minus() {
-                this.count--
-            }
-        },
-        watch: {
-            color: function (newVal, oldVal) {
-                console.log('old val: %s\nnew val: %s', oldVal, newVal)
-            }
-        },
-        directive: {
-            // color:{
-            //     bind: function(){},
-            //     inserted: function(){},
-            //     updata: function(){}
-            // }
-            color: function (el, binding) {
-                el.style.color = binding.value
-                console.log(`old value: ${binding.oldValue} new value: ${binding.value}`)
-            }
-        },
-        beforeCreate() { //https://cn.vuejs.org/images/lifecycle.png
-            console.log(this.count) //undefined
-        },
-        created() {
-            console.log(this.count) //1
+          add () {
+            this.count++
+          }
         }
-    });
+      },
+
+    },
+    computed: {
+      countComputed () {
+        return this.count + 1
+      }
+    },
+    methods: {
+      add: function (num) {
+        if (num) {
+          this.count += num
+        } else {
+          this.count++
+          this.$refs.child.add()
+        }
+      },
+      minus () {
+        this.count--
+      },
+      routeToPath () {
+        console.log(this.path)
+        this.$router.push({
+          path: this.path
+        })
+      }
+    },
+    watch: {
+      color: function (newVal, oldVal) {
+        console.log('old val: %s\nnew val: %s', oldVal, newVal)
+      }
+    },
+    directive: {
+      // color:{
+      //     bind: function(){},
+      //     inserted: function(){},
+      //     updata: function(){}
+      // }
+      color: function (el, binding) {
+        el.style.color = binding.value
+        console.log(`old value: ${binding.oldValue} new value: ${binding.value}`)
+      }
+    },
+    beforeCreate () { //https://cn.vuejs.org/images/lifecycle.png
+      console.log(this.count) //undefined
+    },
+    created () {
+      console.log(this.count) //1
+    }
+  })
 </script>
 </html>

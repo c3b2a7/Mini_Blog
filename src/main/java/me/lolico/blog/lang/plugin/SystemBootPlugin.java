@@ -14,6 +14,7 @@ public interface SystemBootPlugin extends Ordered {
         return this.getClass().getCanonicalName();
     }
 
+    @Override
     default int getOrder() {
         return LOWEST_PRECEDENCE;
     }
